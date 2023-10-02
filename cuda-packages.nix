@@ -147,6 +147,8 @@ let
 
   nsight_compute_version = "2022.2.1";
   cudaPackages = {
+    cudaMajorVersion = lib.versions.major cudaVersion;
+    cudaMinorVersion = lib.versions.minor cudaVersion;
     cuda_cccl = buildFromSourcePackage { name = "cuda-thrust"; };
     cuda_cudart = buildFromSourcePackage {
       name = "cuda-cudart";
