@@ -1,4 +1,4 @@
-{ lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch, runCommand, edk2, acpica-tools,
+{ lib, stdenv, buildPackages, fetchFromGitHub, fetchpatch2, runCommand, edk2, acpica-tools,
   dtc, python3, bc, imagemagick, unixtools, applyPatches, nukeReferences,
   l4tVersion,
 
@@ -60,13 +60,23 @@ let
       sha256 = "sha256-jHyyg5Ywg/tQg39oY1EwHPBjUTE7r7C9q0HO1vqCL6s=";
     };
     patches = edk2NvidiaPatches ++ [
-      (fetchpatch {
-        # https://github.com/NVIDIA/edk2-nvidia/pull/68
-        name = "fix-disabled-serial.patch";
+      (fetchpatch2 {
         url = "https://github.com/NVIDIA/edk2-nvidia/commit/9604259b0d11c049f6a3eb5365a3ae10cfb9e6d9.patch";
-        hash = "sha256-v/WEwcSNjBXeN0eXVzzl31dn6mq78wIm0u5lW1jGcdE=";
+        hash = "sha256-IfnTrQnkxFXbeHDfmQd4Umpbp9MKZI1OKi7H1Ujg8K8=";
       })
+      # Fix Eqos driver to use correct TX clock name
+      # PR: https://github.com/NVIDIA/edk2-nvidia/pull/76
+      (fetchpatch2 {
+        url = "https://github.com/NVIDIA/edk2-nvidia/commit/26f50dc3f0f041d20352d1656851c77f43c7238e.patch";
+        hash = "sha256-nDqLJIfTii/O2KM1yLzvXIpmu5h35PEw7DTSu1CJuDA=";
+      })
+
       ./capsule-authentication.patch
+
+      # Have UEFI use the device tree compiled into the firmware, instead of
+      # using one from the kernel-dtb partition.
+      # See: https://github.com/anduril/jetpack-nixos/pull/18
+      ./edk2-uefi-dtb.patch
     ];
     postPatch = lib.optionalString errorLevelInfo ''
       sed -i 's#PcdDebugPrintErrorLevel|.*#PcdDebugPrintErrorLevel|0x8000004F#' Platform/NVIDIA/NVIDIA.common.dsc.inc
@@ -84,7 +94,43 @@ let
     sha256 = "sha256-h0EW5j5/pq0c48alz7w2+g4RCU2yQdYOtDiNFH9VI3M=";
   };
 
-  edk2-jetson = edk2.overrideAttrs (_: { src = edk2-src; });
+  # Patches from upstream tianocore/edk2 for OpenSSL, to enable in-tree build
+  # of OpenSSL 1.1.1t
+  opensslPatches = import ./edk2-openssl-patches.nix {
+    inherit fetchpatch2;
+  };
+
+  # This has been taken from:
+  # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
+  vendoredOpenSSL = fetchFromGitHub {
+    owner = "openssl";
+    repo = "openssl";
+    rev = "OpenSSL_1_1_1t";
+    sha256 = "sha256-gI2+Vm67j1+xLvzBb+DF0YFTOHW7myotRsXRzluzSLY=";
+  };
+
+  edk2-jetson = edk2.overrideAttrs (prev: {
+    src = edk2-src;
+
+    patches =
+      # Remove this one patch (CryptoPkg/OpensslLib: Upgrade OpenSSL to 1.1.1t)
+      # present on nixos-23.05, as it will be added in the opensslPatches below
+      (builtins.filter (patch: patch.url != "https://bugzilla.tianocore.org/attachment.cgi?id=1330") prev.patches)
+      ++ opensslPatches;
+    postUnpack = ''
+      # This has been taken from:
+      # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
+      rm -rf source/CryptoPkg/Library/OpensslLib/openssl
+    '';
+    postPatch = ''
+      # This has been taken from:
+      # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
+
+      # Replace the edk2's in-tree openssl git-submodule with our 1.1.1t
+      cp -r ${vendoredOpenSSL} CryptoPkg/Library/OpensslLib/openssl
+    '';
+  });
+
   pythonEnv = buildPackages.python3.withPackages (ps: [ ps.tkinter ]);
   targetArch = if stdenv.isi686 then
     "IA32"
@@ -134,10 +180,26 @@ let
 
       enableParallelBuilding = true;
 
+      postUnpack = ''
+        # This has been taken from:
+        # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
+        rm -rf source/CryptoPkg/Library/OpensslLib/openssl
+      '';
+
       prePatch = ''
         rm -rf BaseTools
         cp -r ${edk2-jetson}/BaseTools BaseTools
         chmod -R u+w BaseTools
+      '';
+
+      patches = opensslPatches;
+
+      postPatch = ''
+        # This has been taken from:
+        # https://github.com/NixOS/nixpkgs/commit/3ed8d9b547c3941d74d9455fdec120f415ebaacd
+
+        # Replace the edk2's in-tree openssl git-submodule with our 1.1.1t
+        cp -r ${vendoredOpenSSL} CryptoPkg/Library/OpensslLib/openssl
       '';
 
       configurePhase = ''
