@@ -7,6 +7,12 @@
 }:
 
 let
+  JAOi_lowtemp_overlay = fetchzip {
+    url = "https://developer.nvidia.com/downloads/embedded/l4t/r35_release_v4.1/overlay_jaoi_low_temp_35.4.1.tar.gz";
+    sha256 = "sha256-60qziBK2lw8asr6hjcWY4i/dYmdjF9g9PSDka6E/zzc=";
+    stripRoot = false;
+  };
+
   flash-tools = stdenv.mkDerivation {
     pname = "flash-tools";
     version = l4tVersion;
@@ -39,6 +45,9 @@ let
       rm -rf nv_tegra
       mkdir nv_tegra
       mv bsp_version nv_tegra
+
+      cp -r ${JAOi_lowtemp_overlay}/Linux_for_Tegra/bootloader/. bootloader
+      chmod u+w -R .
     '' + (lib.optionalString (!stdenv.hostPlatform.isx86) ''
       # Wrap x86 binaries in qemu
       pushd bootloader/ >/dev/null
