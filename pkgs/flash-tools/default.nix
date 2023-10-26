@@ -33,7 +33,7 @@ let
       # We should never be flashing upstream's kernel, so just remove it so we get errors if it is used
       #rm -f kernel/Image*
 
-      # Remove the big nv_tegra dir, since its not neede by flash scripts.
+      # Remove the big nv_tegra dir, since its not needed by flash scripts.
       # However, save the needed bsp_version file
       mv nv_tegra/bsp_version .
       rm -rf nv_tegra
