@@ -170,7 +170,7 @@
       "sha256": "3eeb898e41e31f412c7bdae7328a33e1cc0c22022a619279b838b9537ee58914",
       "version": "11.4.19-1"
     },
-    "cupva-2.3-l4t": {
+    "cupva": {
       "filename": "pool/main/c/cupva-2.3-l4t/cupva-2.3-l4t_2.3.0_arm64.deb",
       "sha256": "2808c39298a5b208feffdfbb9d69ffe860a6949771f12bb9b5496d0f09a490b1",
       "version": "2.3.0"

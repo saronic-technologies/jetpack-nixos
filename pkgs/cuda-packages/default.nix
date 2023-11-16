@@ -209,6 +209,19 @@ let
         patchelf $out/lib/libcudnn.so --add-needed libcudnn_cnn_infer.so
       '';
     };
+    cupva = buildFromDebs rec { 
+      name = "cupva"; 
+      version = debs.common.${name}.version;
+      srcs = [ debs.common.${name}.src ];
+      buildInputs = (with l4t; [ l4t-core l4t-cuda l4t-nvsci  l4t-pva ]);
+      postPatch = ''
+        mkdir -p $out/lib
+        for f in $(find . -name '*.so.*'); do
+	  cp $f $out/lib/
+	done
+	rm -rf opt
+      '';
+    };
     libcublas = buildFromSourcePackage { name = "libcublas"; };
     libcufft = buildFromSourcePackage { name = "libcufft"; };
     libcurand = buildFromSourcePackage { name = "libcurand"; };
@@ -427,7 +440,7 @@ let
       srcs = [ debs.common.libnvvpi2.src debs.common.vpi2-dev.src ];
       sourceRoot = "source/opt/nvidia/vpi2";
       buildInputs = (with l4t; [ l4t-core l4t-cuda l4t-nvsci l4t-3d-core l4t-multimedia l4t-pva ])
-        ++ (with cudaPackages; [ libcufft libnpp ]);
+        ++ (with cudaPackages; [ libcufft libnpp cupva ]);
       patches = [ ./vpi2.patch ];
       postPatch = ''
         rm -rf etc
