@@ -164,36 +164,36 @@ let
     '';
     buildInputs = [ l4t-core l4t-cuda l4t-nvsci pango alsa-lib ] ++ (with gst_all_1; [ gstreamer gst-plugins-base ]);
 
-#    patches = [
-#      (fetchpatch {
-#        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
-#        sha256 = "sha256-meHF7uS2TFMoh0qGCmjGzR8hfhE0cCwSP2T3ufzwM0s=";
-#        stripLen = 1;
-#        extraPrefix = "usr/src/jetson_multimedia_api/";
-#      })
-#    ];
-#    postPatch = ''
-#      cp -r src/jetson_multimedia_api/{argus,include,samples} .
-#      rm -rf src
-#
-#      # Replace nvidia's v4l libs with ours. Copy them instead of symlinking so we can modify them
-#      cp ${_l4t-multimedia-v4l}/lib/libv4l2.so lib/libnvv4l2.so
-#      cp ${_l4t-multimedia-v4l}/lib/libv4lconvert.so lib/libnvv4lconvert.so
-#
-#      # Fix the placeholder path in the compiled v4l derivation
-#      sed -i "s#/nix/store/00000000000000000000000000000000-${l4t-multimedia.name}#$out#" lib/libnvv4l2.so lib/libnvv4lconvert.so
-#
-#      # Fix a few broken symlinks
-#      ln -sf libnvv4l2.so lib/libv4l2.so.0.0.999999
-#      ln -sf libnvv4l2.so lib/libv4l2.so.0
-#      ln -sf libnvv4l2.so lib/libv4l2.so
-#      ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0.0.999999
-#      ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0
-#      ln -sf libnvv4lconvert.so lib/libv4lconvert.so
-#
-#      ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
-#      ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
-#    '';
+    patches = [
+      (fetchpatch {
+        url = "https://raw.githubusercontent.com/OE4T/meta-tegra/af0a93313c13e9eac4e80082d8a8e8ac5f7ad6e8/recipes-multimedia/argus/files/0005-Remove-DO-NOT-USE-declarations-from-v4l2_nv_extensio.patch";
+        sha256 = "sha256-meHF7uS2TFMoh0qGCmjGzR8hfhE0cCwSP2T3ufzwM0s=";
+        stripLen = 1;
+        extraPrefix = "usr/src/jetson_multimedia_api/";
+      })
+    ];
+    postPatch = ''
+      cp -r src/jetson_multimedia_api/{argus,include,samples} .
+      rm -rf src
+
+      # Replace nvidia's v4l libs with ours. Copy them instead of symlinking so we can modify them
+      cp ${_l4t-multimedia-v4l}/lib/libv4l2.so lib/libnvv4l2.so
+      cp ${_l4t-multimedia-v4l}/lib/libv4lconvert.so lib/libnvv4lconvert.so
+
+      # Fix the placeholder path in the compiled v4l derivation
+      sed -i "s#/nix/store/00000000000000000000000000000000-${l4t-multimedia.name}#$out#" lib/libnvv4l2.so lib/libnvv4lconvert.so
+
+      # Fix a few broken symlinks
+      ln -sf libnvv4l2.so lib/libv4l2.so.0.0.999999
+      ln -sf libnvv4l2.so lib/libv4l2.so.0
+      ln -sf libnvv4l2.so lib/libv4l2.so
+      ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0.0.999999
+      ln -sf libnvv4lconvert.so lib/libv4lconvert.so.0
+      ln -sf libnvv4lconvert.so lib/libv4lconvert.so
+
+      ln -sf ../../../libv4l2_nvcuvidvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so
+      ln -sf ../../../libv4l2_nvvideocodec.so lib/libv4l/plugins/nv/libv4l2_nvvideocodec.so
+    '';
   };
 
   l4t-nvfancontrol = buildFromDeb {
