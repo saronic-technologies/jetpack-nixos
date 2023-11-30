@@ -235,8 +235,13 @@ let
     '';
   };
 
+  cti-xusb-firmware = /home/freeman/sources/saronic-jetpack-nixos/xusb_t234_prod.bin;
+
   l4t-xusb-firmware = buildFromDeb {
     name = "nvidia-l4t-xusb-firmware";
+    postInstall = ''
+     cp ${cti-xusb-firmware} $out/opt/ota_package/t23x/xusb_t234_prod.bin
+    '';
     autoPatchelf = false;
     meta.platforms = [ "aarch64-linux" "x86_64-linux" ];
   };
